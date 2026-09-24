@@ -18,12 +18,24 @@
 #include <NimBLEDevice.h>
 #include <math.h>
 
+#if defined(HAS_M5) && defined(HAS_T_EMBED_CC1101)
+  #error "Wybierz tylko jedna platforme: HAS_M5 albo HAS_T_EMBED_CC1101"
+#endif
+
+#if !defined(HAS_M5) && !defined(HAS_T_EMBED_CC1101)
+  #define TRIKI_GENERIC_ESP32
+#endif
+
 // Funkcje hosta NimBLE (linkowane z biblioteki): ustawienie statycznego adresu
 // random. NimBLE 1.4.x kompiluje konfiguracje prywatnosci warunkowo, dlatego
-// nie wolno wywolywac ble_hs_pvcy_rpa_config() bezposrednio — na ESP32-S3
-// funkcja moze nie zostac zlinkowana. setOwnAddrType() obsluguje te warianty
-// wewnatrz biblioteki, a ble_hs_id_set_rnd() ustawia nasz adres random static.
+// wywolujemy ble_hs_pvcy_rpa_config() tylko wtedy, gdy biblioteka wlaczyla
+// host-based privacy. setOwnAddrType() obsluguje pozostale warianty wewnatrz
+// biblioteki, a ble_hs_id_set_rnd() ustawia nasz adres random static.
 extern "C" int ble_hs_id_set_rnd(const uint8_t *rnd_addr);
+#if defined(MYNEWT_VAL) && MYNEWT_VAL(BLE_HOST_BASED_PRIVACY)
+  extern "C" int ble_hs_pvcy_rpa_config(uint8_t enabled);
+  #define TRIKI_HAS_NIMBLE_HOST_PRIVACY
+#endif
 
 #ifdef HAS_M5
   #include <M5Unified.h>
@@ -298,9 +310,12 @@ static void setupBle() {
 
   // Adres BLE jak prawdziwy kapsel: RANDOM STATIC, BEZ prywatnosci (MAC jest wymagany).
   // Ustawiamy typ random, a nastepnie konkretny adres random static.
-  // NimBLE nie wlacza prywatnosci host-based, gdy ta opcja jest wylaczona
-  // dla danego targetu/frameworka.
+  // Gdy dana wersja NimBLE wlacza host-based privacy, jawnie ja wylaczamy,
+  // aby zachowac staly adres wymagany przez protokol Triki.
   NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_RANDOM);
+#ifdef TRIKI_HAS_NIMBLE_HOST_PRIVACY
+  ble_hs_pvcy_rpa_config(0);
+#endif
   int rc = ble_hs_id_set_rnd(BLE_ADDR_LE);
   Serial.printf("[TrikiEmu] adres random static rc=%d (%s)\n", rc, macStr());
 

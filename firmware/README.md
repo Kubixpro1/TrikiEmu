@@ -106,11 +106,11 @@ offset 0    1     2..3   4..5   6..7   8..9   10..11 12..13
 
 ## Pułapki implementacyjne (ESP32 + NimBLE — kosztowały czas)
 
-- **Adres random static:** `ble_hs_id_set_rnd(addr_le)` (bajty **LSB-first**). Ale
-  `NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_RANDOM)` w NimBLE-Arduino **włącza
-  prywatność (RPA)** → urządzenie reklamuje losowy adres prywatny zamiast Twojego.
-  Trzeba **wyłączyć prywatność**: `ble_hs_pvcy_rpa_config(0)`. Kolejność:
-  `setOwnAddrType(RANDOM)` → `ble_hs_pvcy_rpa_config(0)` → `ble_hs_id_set_rnd(addr)`.
+- **Adres random static:** `ble_hs_id_set_rnd(addr_le)` (bajty **LSB-first**).
+  `NimBLEDevice::setOwnAddrType(BLE_OWN_ADDR_RANDOM)` wybiera typ adresu random.
+  Jeśli dana konfiguracja NimBLE włącza host-based privacy, kod warunkowo wywołuje
+  `ble_hs_pvcy_rpa_config(0)`, aby wyłączyć RPA. Na konfiguracjach bez tej funkcji
+  wywołanie jest pomijane, dzięki czemu T-Embed poprawnie się linkuje.
 - **16-bit UUID `0x0001` w scan response:** `setCompleteServices(NimBLEUUID((uint16_t)0x0001))`.
 - **Płynne ~100 Hz:** poproś o krótki interwał połączenia w `onConnect`
   (`updateConnParams(handle, 6, 12, 0, 200)` = 7.5–15 ms).

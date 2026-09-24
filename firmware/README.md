@@ -12,6 +12,8 @@ M5StickC Plus2 (ekran/przyciski/IMU/bateria) to **opcja** włączana flagą `-D 
 - **Goły ESP32** (`env:esp32dev`): sterowanie wyłącznie z PC po USB-serial. Brak ekranu/przycisków.
 - **M5StickC Plus2** (`env:m5stickc_plus2`): + ekran ze stanem, przyciski (BLE on/off, uśpienie),
   realny IMU MPU6886 jako alternatywne źródło ruchu, poziom baterii.
+- **LilyGo T-Embed-CC1101** (`env:t_embed_cc1101`): + ekran ST7789, przycisk USER
+  (BLE on/off); płytka nie ma IMU, więc używa źródła ruchu z USB-serial.
 
 ---
 
@@ -128,6 +130,7 @@ PlatformIO Core (CLI) lub wtyczka PlatformIO IDE. Z katalogu `firmware/`:
 pio run                              # buduje domyslne env (m5stickc_plus2)
 pio run -e esp32dev                  # buduje wersje na gole ESP32
 pio run -e m5stickc_plus2 -t upload  # wgrywa na M5StickC Plus2
+pio run -e t_embed_cc1101 -t upload  # wgrywa na LilyGo T-Embed-CC1101
 pio run -e esp32dev -t upload        # wgrywa na gole ESP32 (DevKit)
 pio device monitor                   # log szeregowy (115200)
 ```
@@ -153,6 +156,9 @@ Gotowe narzędzia PC (`pc_control`, `pc_keyboard` ze sterowaniem klawiaturą, `p
 
 Na gołym ESP32 reklama startuje **od razu** po włączeniu (brak przycisków) — z PC
 wyłączasz przez `BLE,0`. Na M5 startuje w IDLE (przycisk A włącza).
+Na T-Embed-CC1101 reklama startuje w IDLE; przycisk USER (GPIO6) przełącza BLE.
+Przycisk enkodera (GPIO0) budzi przygaszony ekran. Ekran ST7789 korzysta z pinów
+CS=41, DC=16, BL=21, SCLK=11, MOSI=9, MISO=10.
 
 ## Sterowanie na M5StickC Plus2 (przyciski / zasilanie / ekran)
 
